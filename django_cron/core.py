@@ -110,11 +110,11 @@ class CronJobManager(object):
             return True
 
         if cron_job.schedule.run_monthly_on_days is not None:
-            if not datetime.today().day in cron_job.schedule.run_monthly_on_days:
+            if not get_current_time().day in cron_job.schedule.run_monthly_on_days:
                 return False
 
         if cron_job.schedule.run_weekly_on_days is not None:
-            if not datetime.today().weekday() in cron_job.schedule.run_weekly_on_days:
+            if not get_current_time().weekday() in cron_job.schedule.run_weekly_on_days:
                 return False
 
         if cron_job.schedule.retry_after_failure_mins:
@@ -122,7 +122,7 @@ class CronJobManager(object):
             last_job = (
                 CronJobLog.objects.filter(code=cron_job.code)
                     .order_by('-start_time')
-                    .exclude(start_time__gt=datetime.today())
+                    .exclude(start_time__gt=get_current_time())
                     .first()
             )
             if (
@@ -138,7 +138,7 @@ class CronJobManager(object):
             try:
                 self.previously_ran_successful_cron = CronJobLog.objects.filter(
                     code=cron_job.code, status=CronStatus.SUCCESS
-                ).exclude(start_time__gt=datetime.today()).latest('start_time')
+                ).exclude(start_time__gt=get_current_time()).latest('start_time')
             except CronJobLog.DoesNotExist:
                 pass
 
@@ -161,7 +161,7 @@ class CronJobManager(object):
                 if actual_time >= user_time:
                     qset = CronJobLog.objects.filter(
                         code=cron_job.code, ran_at_time=time_data,
-                        status__in=(CronStatus.SUCCESS, )
+                        status__in=(CronStatus.SUCCESS, CronStatus.RUNNING)
                     ).filter(
                         Q(start_time__gt=now)
                         | Q(

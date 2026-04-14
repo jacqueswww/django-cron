@@ -1,6 +1,5 @@
 [build-system]
 requires = ["setuptools>=75.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
 
 [project]
 name = "django-cron"
@@ -30,3 +29,10 @@ Repository = "https://github.com/jacqueswww/django-cron"
 [tool.setuptools]
 packages = { find = {} }
 zip-safe = false
+
+[dependency-groups]
+dev = [
+    "freezegun==1.5.5",
+    "mock==5.2.0",
+    "django-stubs",
+]

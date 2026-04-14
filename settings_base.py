@@ -12,7 +12,7 @@ INSTALLED_APPS = [
 ]
 
 SECRET_KEY = "wknfgl34qtnjo&Yk3jqfjtn2k3jtnk4wtnk"
-
+TIME_ZONE = 'UTC'
 
 CRON_CLASSES = [
     'test_crons.TestSuccessCronJob',
