@@ -37,8 +37,8 @@ class CronJobLogAdmin(admin.ModelAdmin):
 
     search_fields = ('code', 'message')
     ordering = ('-start_time',)
-    list_display = ('code', 'start_time', 'end_time', 'humanize_duration', 'is_success')
-    list_filter = ('code', 'start_time', 'is_success', DurationFilter)
+    list_display = ('code', 'start_time', 'end_time', 'humanize_duration', 'status')
+    list_filter = ('code', 'start_time', 'status', DurationFilter)
 
     def get_queryset(self, request):
         return super().get_queryset(request).annotate(

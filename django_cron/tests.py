@@ -119,7 +119,7 @@ class TestRunCrons(TransactionTestCase):
             self._call(self.success_cron, force=True)
         self.assertEqual(CronJobLog.objects.all().count(), 3)
         self.assertEqual(CronJobLock.objects.all().count(), cron_job_locks + 1)
-        self.assertEqual(CronJobLock.objects.first().locked, False)
+        self.assertEqual(CronJobLock.objects.all()[0].locked, False)
 
     @patch.object(test_crons.TestSuccessCronJob, 'do')
     def test_dry_run_does_not_perform_task(self, mock_do):
@@ -332,7 +332,7 @@ class TestRunCrons(TransactionTestCase):
             self.assertEqual(humanize_duration(duration), humanized)
 
     def test_remove_old_succeeded_job_logs(self):
-        mock_date = datetime.datetime(2022, 5, 1, 12, 0, 0)
+        mock_date = datetime.datetime(2022, 5, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
         for _ in range(5):
             with freeze_time(mock_date):
                 call_command('runcrons', self.run_and_remove_old_logs)
@@ -340,11 +340,11 @@ class TestRunCrons(TransactionTestCase):
             self.assertEqual(CronJobLog.objects.all().first().end_time, mock_date)
 
     def test_run_job_with_logs_in_future(self):
-        mock_date_in_future = datetime.datetime(2222, 5, 1, 12, 0, 0)
+        mock_date_in_future = datetime.datetime(2222, 5, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
         with freeze_time(mock_date_in_future):
             call_command('runcrons', self.five_mins_cron)
             self.assertEqual(CronJobLog.objects.all().count(), 1)
-            self.assertEqual(CronJobLog.objects.all().first().end_time, mock_date_in_future)
+            self.assertEqual(CronJobLog.objects.all()[0].end_time, mock_date_in_future)
 
         mock_date_in_past = mock_date_in_future - timedelta(days=1000)
         with freeze_time(mock_date_in_past):

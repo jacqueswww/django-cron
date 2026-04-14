@@ -9,6 +9,7 @@ from django.utils.timezone import now as utc_now
 from django.db.models import Q
 
 from django_cron.helpers import get_class, get_current_time
+from django_cron.enums import CronStatus
 
 DEFAULT_LOCK_BACKEND = 'django_cron.backends.lock.cache.CacheLock'
 DJANGO_CRON_OUTPUT_ERRORS = False
@@ -136,7 +137,7 @@ class CronJobManager(object):
         if cron_job.schedule.run_every_mins is not None:
             try:
                 self.previously_ran_successful_cron = CronJobLog.objects.filter(
-                    code=cron_job.code, is_success=True
+                    code=cron_job.code, status=CronStatus.SUCCESS
                 ).exclude(start_time__gt=datetime.today()).latest('start_time')
             except CronJobLog.DoesNotExist:
                 pass
@@ -156,9 +157,11 @@ class CronJobManager(object):
                 user_time = time.strptime(time_data, "%H:%M")
                 now = get_current_time()
                 actual_time = time.strptime("%s:%s" % (now.hour, now.minute), "%H:%M")
+
                 if actual_time >= user_time:
                     qset = CronJobLog.objects.filter(
-                        code=cron_job.code, ran_at_time=time_data, is_success=True
+                        code=cron_job.code, ran_at_time=time_data,
+                        status__in=(CronStatus.SUCCESS, )
                     ).filter(
                         Q(start_time__gt=now)
                         | Q(
@@ -179,7 +182,8 @@ class CronJobManager(object):
         cron_job = getattr(self, 'cron_job', self.cron_job_class)
         cron_log.code = cron_job.code
 
-        cron_log.is_success = kwargs.get('success', True)
+        status = kwargs.get('status', CronStatus.NONE)
+        cron_log.status = status
         cron_log.message = self.make_log_msg(messages)
         cron_log.ran_at_time = getattr(self, 'user_time', None)
         cron_log.end_time = get_current_time()
@@ -224,7 +228,7 @@ class CronJobManager(object):
                 trace = "".join(
                     traceback.format_exception(ex_type, ex_value, ex_traceback)
                 )
-                self.make_log(self.msg, trace, success=False)
+                self.make_log(self.msg, trace, status=CronStatus.FAILED)
             except Exception as e:
                 err_msg = "Error saving cronjob (%s) log message: %s" % (
                     self.cron_job_class,
@@ -262,9 +266,9 @@ class CronJobManager(object):
                         cron_job_class.__name__,
                         self.cron_job.code,
                     )
-                    self.make_log('Job in progress', success=True)
+                    self.make_log('Job in progress', status=CronStatus.RUNNING)
                     self.msg = self.cron_job.do()
-                    self.make_log(self.msg, success=True)
+                    self.make_log(self.msg, status=CronStatus.SUCCESS)
                     self.cron_job.set_prev_success_cron(
                         self.previously_ran_successful_cron
                     )
@@ -296,4 +300,4 @@ class CronJobManager(object):
     def _remove_old_success_job_logs(self, job_class):
         if job_class.remove_successful_cron_logs or getattr(settings, 'REMOVE_SUCCESSFUL_CRON_LOGS', False):
             from django_cron.models import CronJobLog
-            CronJobLog.objects.filter(code=job_class.code, is_success=True).exclude(pk=self.cron_log.pk).delete()
+            CronJobLog.objects.filter(code=job_class.code, status=CronStatus.SUCCESS).exclude(pk=self.cron_log.pk).delete()

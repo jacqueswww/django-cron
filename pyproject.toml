@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "django-cron"
+version = "0.6.1"
+description = "Running python crons in a Django project"
+readme = "README.rst"
+keywords = ["django", "cron"]
+license = "MIT"
+authors = [
+    { name = "Jacques Wagener", email = "jacques.wagener@carify.com" },
+    { name = "Sumit Chachra", email = "chachra@tivix.com"},
+]
+requires-python = ">=3.10"
+dependencies = ["Django>=5.2"]
+classifiers = [
+    "Framework :: Django",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development",
+]
+
+[project.urls]
+Homepage = "https://github.com/jacqueswww/django-cron"
+Repository = "https://github.com/jacqueswww/django-cron"
+
+[tool.setuptools]
+packages = { find = {} }
+zip-safe = false
